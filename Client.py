@@ -22,6 +22,10 @@ def send_packet(client_socket, server_address, seq_num, message, operation, simu
     if simulate_error == "corrupção":
         checksum = "corrupted_checksum_value"
 
+    # Simular erro no número de sequência
+    if simulate_error == "erroSeqNumPKT":
+        seq_num = 1 - seq_num  # Inverte o número de sequência
+
     packet = f"{seq_num}{checksum}{operation}{message}"
     
     print(f"----------------PACKAGE {seq_num}-----------------------\n")
@@ -67,7 +71,7 @@ def send_ack_after_response(client_socket, server_address, seq_num):
     
     if error_var.get() != "perdaAck":
         client_socket.sendto(ack_packet.encode(), server_address)
-        print(f"ACK enviado para o servidor: {ack_packet}")
+        print(f"PACKET enviado para o servidor: {ack_packet}")
 
 def alarm_message(msg):
     print(f"ALERTA: {msg}")
@@ -116,8 +120,9 @@ def client():
     error_var = tk.StringVar(value="normal")
     tk.Label(root, text="Simulação de Erros:").grid(row=3, column=0, pady=10)
     tk.Radiobutton(root, text="Envio Normal", variable=error_var, value="normal").grid(row=4, column=0, pady=5)
-    tk.Radiobutton(root, text="Simular Perda", variable=error_var, value="perda").grid(row=4, column=1, pady=5)
+    tk.Radiobutton(root, text="Simular Perda PKT Cliente", variable=error_var, value="perda").grid(row=4, column=1, pady=5)
     tk.Radiobutton(root, text="Simular Corrupção", variable=error_var, value="corrupção").grid(row=4, column=2, pady=5)
+    tk.Radiobutton(root, text="Simular Erro Seq. Num ACK", variable=error_var, value="erroSeqNumACK").grid(row=5, column=0, pady=5)
     tk.Radiobutton(root, text="Simular Perda de ACK", variable=error_var, value="perdaAck").grid(row=5, column=1, pady=5)
 
     operation_var = tk.StringVar(value="C")

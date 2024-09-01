@@ -1,6 +1,10 @@
 import socket
 import hashlib
 
+# Variável global para armazenar o último ACK enviado
+global armazenamento
+armazenamento = {}
+
 # Função para calcular o checksum
 def calculate_checksum(data):
     return hashlib.md5(data.encode()).hexdigest()
@@ -49,7 +53,7 @@ def server():
         if packet.startswith("ACK"):
             # Processar pacotes ACK
             ack_seq_num = int(packet[3])
-            print(f"Recebido ACK com número de sequência: {ack_seq_num}")
+            print(f"Recebido PKT com número de sequência: {ack_seq_num}")
             continue
 
         # Verificar se o pacote tem pelo menos o tamanho esperado (1 byte para seq_num, 32 bytes para checksum e pelo menos 1 byte para operation)
@@ -64,9 +68,11 @@ def server():
 
         # Verificação do checksum
         calculated_checksum = calculate_checksum(message)
+        print(f"\n\nRECEBIDO PACKET: {seq_num}\n\n")
+        print(f"ENVIANDO ACK: {seq_num}\n\n")
 
         if checksum == calculated_checksum and seq_num == expected_seq_num:
-            print(f"----------------PACKAGE {seq_num}-----------------------\n")
+            print(f"----------------ACK {seq_num}-----------------------\n")
             print(f"NUM SEQUENCIA: {seq_num}")
             print(f"CHECKSUM RECEBIDO: {checksum}")
             print(f"CHECKSUM CALCULADO: {calculated_checksum}")
@@ -81,16 +87,28 @@ def server():
                 result = decrypt_message(message)
                 print(f"Mensagem descriptografada: {result}")
 
-            print(f"------------------FIM DO PACKAGE {seq_num}---------------------\n\n")
+            print(f"------------------FIM DO ACK {seq_num}---------------------\n\n")
 
             # Enviar ACK com a mensagem processada de volta
             send_ack(server_socket, client_address, seq_num, result)
-
+            
+            # Armazenar o último ACK enviado
+            global armazenamento
+            armazenamento = {
+                "server_socket": server_socket,
+                "client_address": client_address,
+                "seq_num": seq_num,
+                "checksum": checksum,
+                "operation": operation,
+                "message": message,
+                "processed_message": result
+            }
+            #print(f"ULTIMO ACK ARMAZENADO: {armazenamento}")
             expected_seq_num = 1 - expected_seq_num
         else:
-            # Ignorar ou reenviar o último ACK se for duplicado
-            print("Erro detectado. ACK anterior reenviado.")
-            send_ack(server_socket, client_address, 1 - seq_num)
+            # Ignorar ou reenviar o último ACK se for duplicado ou o número de sequência estiver incorreto
+            print("Erro detectado. Reenviando o último ACK armazenado.")
+            send_ack(armazenamento["server_socket"], armazenamento["client_address"], armazenamento["seq_num"], armazenamento["processed_message"])
 
 if __name__ == "__main__":
     server()
