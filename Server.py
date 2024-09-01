@@ -37,7 +37,7 @@ def send_ack(server_socket, client_address, seq_num, message=None, simulate_erro
 # Função do servidor
 def server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_socket.bind(('localhost', 12000))
+    server_socket.bind(('0.0.0.0', 12000))
 
     expected_seq_num = 0
 
